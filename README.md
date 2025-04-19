@@ -21,11 +21,15 @@ pcap_diff <File A> <File B>
 - Returns 1 if files differ
 - Returns 2 on error
 
-## Output Modes
+## Building
+```
+g++ -O3 --std=c++11 -Wpedantic -Wextra -Wall -Werror -Wfatal-errors packets.cpp pcap_diff.cpp packet_diff.cpp mapped_file.cpp pcap_reader.cpp pcap_writer.cpp timestamp.cpp pcap_file.cpp -I./include -o pcap_diff
+```
 
-
-## Options
-
+## Wireshark Colouring
+When using the "basic" output mode, the following colouring option in
+wireshark will highlight removed packets in red and added packets in 
+green:
 ```
 @Removed@frame[-1] == 0x01@[63222,24929,20817][0,0,0]
 @Added@frame[-1] == 0x02@[36751,61680,42148][0,0,0]
