@@ -23,7 +23,7 @@ pcap_diff <File A> <File B>
 
 ## Building
 ```
-g++ -O3 --std=c++11 -Wpedantic -Wextra -Wall -Werror -Wfatal-errors packets.cpp pcap_diff.cpp packet_diff.cpp mapped_file.cpp pcap_reader.cpp pcap_writer.cpp timestamp.cpp pcap_file.cpp -I./include -o pcap_diff
+g++ -O3 --std=c++11 -Wpedantic -Wextra -Wall -Werror -Wfatal-errors pcap_diff.cpp src/packets.cpp src/packet_diff.cpp src/mapped_file.cpp src/pcap_reader.cpp src/pcap_writer.cpp src/timestamp.cpp src/pcap_file.cpp -I./include -o pcap_diff
 ```
 
 ## Wireshark Colouring
