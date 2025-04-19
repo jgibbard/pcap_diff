@@ -1,16 +1,16 @@
-# PCAP Diff Tool
+# PCAP Diff Tool 🔍
 A tool to identify the differences between two PCAP files and display the result
 in Wireshark.
 
 Ideal for testing packet filtering, routing, and encapsulation.
 
 ## Features
-- **Byte Mask:** Set which bytes are compared. Allows skipping TTL, Checksums,
+- ⚙️ **Byte Mask:** Set which bytes are compared. Allows skipping TTL, Checksums,
                  Counters, etc.
-- **Multi Link Layer:** Custom byte ranges for comparison. Allow's comparing
+- 📦 **Multi Link Layer:** Custom byte ranges for comparison. Allows comparing
                         just the payload of two different carrier protocols.
-- **PCAP Output:** Uses wireshark to view the results.
-- **Multiple comparison modes:** Choose between a full search or a timestamp
+- 🦈 **PCAP Output:** Uses wireshark to view the results.
+- ⏳ **Multiple comparison modes:** Choose between a full search or a timestamp
                                  based window search.
 
 ## Basic Usage
