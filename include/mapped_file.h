@@ -11,13 +11,13 @@ class MappedFile {
     MappedFile(const std::string& path, bool writable = false, size_t size = 0);
     // Class manages a resource that needs a custom destructor
     ~MappedFile();
-    // Custom destructor threfore "rule of 5" applies
-    // Disable copy constructor and copy assignemnt
+    // Custom destructor therefore "rule of 5" applies
+    // Disable copy constructor and copy assignment
     // Not required for application and sharing the 
     // resource would require a lot of additional code
     MappedFile(const MappedFile&) = delete;
     MappedFile& operator=(const MappedFile&) = delete;
-    // Move assigment and move construtor allowed 
+    // Move assignment and move constructor allowed 
     MappedFile(MappedFile&& other) noexcept;
     MappedFile& operator=(MappedFile&& other) noexcept;
 

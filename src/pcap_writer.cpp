@@ -71,7 +71,7 @@ void PcapWriter::WritePcapBasic(const std::string& filename,
 
   // Calculate the exact size that the generated will be
   size_t total_bytes = sizeof(PcapFile::FileHeader);
-  // Matched and unmathed (removed) packets in file A
+  // Matched and unmatched (removed) packets in file A
   for (const Packet& packet : packets_a) {
     total_bytes += packet.data.size();
     total_bytes += sizeof(PcapFile::PacketHeader);

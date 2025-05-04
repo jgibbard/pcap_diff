@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
   args::Positional<std::string> filename_b(
       parser, "File B", "Filename for file B", {args::Options::Required});  
   args::ValueFlag<uint64_t> max_packets(
-      parser, "num packets", "Maximum mumber of packets",
+      parser, "num packets", "Maximum number of packets",
       {"max-packets", 'n'}, 0);
   args::ValueFlag<std::string> byte_mask(
       parser, "mask", "Diff byte mask", {"byte-mask", 'm'}, "");
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
         args::get(time_offset_a) != 0.0 ||
         args::get(time_offset_b) != 0.0)) {
     std::cerr << "--time-offset-[a|b] and --auto-time-align "
-                 "are muturally exclusive options \n" << std::endl;
+                 "are mutually exclusive options \n" << std::endl;
     return 2;
   }
 

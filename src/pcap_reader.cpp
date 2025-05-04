@@ -83,7 +83,7 @@ std::vector<Packet> PcapReader::GetPackets(uint64_t max_packets) const {
       throw std::runtime_error("Failed to parse file: " + filename_ + "\n"
                                "File appears truncated or corrupt.");
     }
-    // Constrct the header and data directly in the packets vector
+    // Construct the header and data directly in the packets vector
     // This should avoid unneeded copying / moving initially.
     // Since the size of the vector will keep growing, it will likely be
     // moved several times.
