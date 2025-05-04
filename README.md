@@ -129,7 +129,7 @@ Show the help menu.
 
 ## Examples
 
-Basic comparison - No output file:
+Basic comparison - No output file - Return value indicates if files differ:
 ```
 pcap_diff capture1.pcap capture2.pcap
 ```

@@ -26,11 +26,9 @@ void PcapWriter::WritePcap(const std::string& filename,
       WritePcapBasic(filename, packets_a, packets_b);
       break;
     case PcapWriter::Mode::Full:
-      throw std::runtime_error("Output format 'full' is "
-                               "currently unsupported");
+      WritePcapFull(filename, packets_a, packets_b);
       break;
   }
-
 }
 
 void PcapWriter::WritePcapMatched(const std::string& filename,
@@ -169,15 +167,124 @@ void PcapWriter::WritePcapBasic(const std::string& filename,
 }
 
 void PcapWriter::CopyHeaderIncLen(uint8_t* data, 
-                                  PcapFile::PacketHeader header) {
-  header.incl_len++;
-  header.orig_len++;
+                                  PcapFile::PacketHeader header,
+                                  uint32_t inc) {
+  header.incl_len += inc;
+  header.orig_len += inc;
   std::memcpy(data, &header, sizeof(PcapFile::PacketHeader));
 }
 
-void PcapWriter::WritePcapFull(const std::string& /*filename*/,
-                               const Packets& /*packets_a*/,
-                               const Packets& /*packets_b*/) {
+void PcapWriter::WritePcapFull(const std::string& filename,
+                               const Packets& packets_a,
+                               const Packets& packets_b) {
+
+  // Calculate the exact size that the generated will be
+  size_t total_bytes = sizeof(PcapFile::FileHeader);
+  // Matched and unmatched (removed) packets in file A
+  for (const Packet& packet : packets_a) {
+    total_bytes += packet.data.size();
+    total_bytes += sizeof(PcapFile::PacketHeader);
+    // Extra 5 bytes for Diff header
+    total_bytes += 5;
+  }
+  // Just unmatched (added) packets in file B
+  for (const Packet& packet : packets_b) {
+    if (!packet.match) {
+      total_bytes += packet.data.size();
+      total_bytes += sizeof(PcapFile::PacketHeader);
+      // Extra 5 bytes for Diff header
+      total_bytes += 5;
+    }
+  }
+  // Memory map a writable file with the right size to store the whole PCAP
+  MappedFile output_file(filename, true, total_bytes);
+  uint8_t* data = output_file.DataWritable();
+
+  uint32_t packets_a_ll = packets_a.GetLinkLayer();
+  uint32_t packets_b_ll = packets_b.GetLinkLayer();
+
+  // Copy over the PCAP global file header with Link type set to 147 (DLT_USER0)
+  PcapFile::FileHeader file_header = \
+      PcapFile::GetStandardHeader(147);
+  std::memcpy(data, &file_header, sizeof(PcapFile::FileHeader));
+  data += sizeof(PcapFile::FileHeader);
+
+  // Add the packet data to the file
+  size_t count_a = 0;
+  size_t count_b = 0;
+
+  // First loop through packets until at least one of packets_a or packets_b
+  // is finished.
+  while (count_a < packets_a.Size() && count_b < packets_b.Size()) {
+    // Skip through B until there is an unmatched (added) packet
+    if (packets_b[count_b].match) {
+      count_b++;
+      continue;
+    }
+    // Output packets from A until the right slot for the unmatched 
+    // packet from B.
+    if (packets_a[count_a].header.time < packets_b[count_b].header.time) {
+      // PCAP Header
+      CopyHeaderIncLen(data, packets_a[count_a].header, 5);
+      data += sizeof(PcapFile::PacketHeader);
+      // Diff Header (1 byte Match, 4 bytes PCAP Link type)
+      *data = packets_a[count_a].match ? 0 : 1;
+      data++;
+      std::memcpy(data, &packets_a_ll, sizeof(uint32_t));
+      data += 4;
+      // Packet data
+      std::memcpy(data, packets_a[count_a].data.data(), 
+                  packets_a[count_a].data.size());
+      data += packets_a[count_a].data.size();
+      count_a++;
+    } else {
+      // PCAP Header
+      CopyHeaderIncLen(data, packets_b[count_b].header, 5);
+      data += sizeof(PcapFile::PacketHeader);
+      // Diff Header (1 byte Match, 4 bytes PCAP Link type)
+      *data = 2;
+      data++;
+      std::memcpy(data, &packets_b_ll, sizeof(uint32_t));
+      data += 4;
+      // Packet data
+      std::memcpy(data, packets_b[count_b].data.data(), 
+              packets_b[count_b].data.size());
+      data += packets_b[count_b].data.size();
+      count_b++;
+    }
+  }
+  // Next loop through any remaining packets in A
+  while (count_a < packets_a.Size()) {
+    // PCAP Header
+    CopyHeaderIncLen(data, packets_a[count_a].header, 5);
+    data += sizeof(PcapFile::PacketHeader);
+    // Diff Header (1 byte Match, 4 bytes PCAP Link type)
+    *data = packets_a[count_a].match ? 0 : 1;
+    data++;
+    std::memcpy(data, &packets_a_ll, sizeof(uint32_t));
+    data += 4;
+    // Packet data
+    std::memcpy(data, packets_a[count_a].data.data(), 
+                packets_a[count_a].data.size());
+    data += packets_a[count_a].data.size();
+    count_a++;
+  }
+  // Finally loop through any remaining packets in B
+  while (count_b < packets_b.Size()) {
+    // PCAP Header
+    CopyHeaderIncLen(data, packets_b[count_b].header, 5);
+    data += sizeof(PcapFile::PacketHeader);
+    // Diff Header (1 byte Match, 4 bytes PCAP Link type)
+    *data = 2;
+    data++;
+    std::memcpy(data, &packets_b_ll, sizeof(uint32_t));
+    data += 4;
+    // Packet data
+    std::memcpy(data, packets_b[count_b].data.data(), 
+            packets_b[count_b].data.size());
+    data += packets_b[count_b].data.size();
+    count_b++;
+  }
 
 }
 

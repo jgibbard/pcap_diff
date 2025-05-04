@@ -25,5 +25,6 @@ namespace PcapWriter {
 
   Mode StringToMode(const std::string& mode);
 
-  void CopyHeaderIncLen(uint8_t* file, PcapFile::PacketHeader header);
+  void CopyHeaderIncLen(uint8_t* file, PcapFile::PacketHeader header, 
+                        uint32_t inc = 1);
 } 
