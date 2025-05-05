@@ -128,35 +128,48 @@ Show the help menu.
 
 
 ## Examples
-
 Basic comparison - No output file - Return value indicates if files differ:
-```
+```bash
 pcap_diff capture1.pcap capture2.pcap
 ```
 Compare only IP packet (skip Ethernet headers):
-```
+```bash
 pcap_diff -a [14:] -b [14:] -o out.pcap capture1.pcap capture2.pcap
 ```
 Compare only the IP packet, but skip the IP TTL (9th byte in IP header):
-```
+```bash
 pcap_diff -a [14:] -b [14:] -m 111111110 -o out.pcap capture1.pcap capture2.pcap
 ```
 Compare only the first 100 packets with timestamp-based matching:
-```
+```bash
 pcap_diff -n 100 -s timestamp -o out.pcap capture1.pcap capture2.pcap
 ```
 Use manual timestamp offset and write a full diff:
-```
+```bash
 pcap_diff -t 0.5 -T -0.3 -f full -o diff_full.pcap capture1.pcap capture2.pcap
 ```
 Output only added packets:
-```
+```bash
 pcap_diff -f added -o added_packets.pcap capture1.pcap capture2.pcap
 ```
 
-## Building
+## Building and installing
+To compile the program simply run the `make` command in the `pcap_diff` directory. The executable is output as `./build/pcap_diff`.
+```bash
+cd pcap_diff
+make -j$(nproc)
+./build/pcap_diff --help
 ```
-g++ -O3 --std=c++11 -Wpedantic -Wextra -Wall -Werror -Wfatal-errors pcap_diff.cpp src/packets.cpp src/packet_diff.cpp src/mapped_file.cpp src/pcap_reader.cpp src/pcap_writer.cpp src/timestamp.cpp src/pcap_file.cpp -I./include -o pcap_diff
+
+Once built the program can be optionally installed using:
+```bash
+sudo make install
+```
+This copies the executable to `/usr/local/bin`.
+
+Once installed, the program can be removed using:
+```bash
+sudo rm /usr/local/bin/pcap_diff
 ```
 
 ## Wireshark Colouring - Basic Output Mode
