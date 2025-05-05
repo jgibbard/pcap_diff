@@ -1,3 +1,9 @@
+-- This Wireshark plugin handles parsing a custom link layer protocol that 
+-- allows the full diff between two PCAPs to be examined.
+-- The protocol allows the two compared PCAPs to have a different link layer.
+-- A look up table is used to handover the parsing of the protocol to the 
+-- correct link layer.
+
 -- There is not a nice list of these mappings anywhere, and there is no API
 -- in Wireshark to set the link type from an uint, so you must call a dissector
 -- by its name.
@@ -56,12 +62,31 @@ local match_type_field = ProtoField.uint8(
         [2] = "Added"
     })
 
-local ll_type_field = ProtoField.uint32(
-    "diff.link_type", "Link Layer Type", base.DEC, nil, nil, "PCAP Link Layer Type")
+local ll_type_a_field = ProtoField.uint32(
+    "diff.link_type", "PCAP A Link Layer Type",
+    base.DEC, nil, nil, "PCAP A Link Layer Type")
 
-local payload_field = ProtoField.bytes("diff.payload", "Payload")
+local ll_type_b_field = ProtoField.uint32(
+    "diff.link_type", "PCAP B Link Layer Type",
+    base.DEC, nil, nil, "PCAP B Link Layer Type")
 
-diff_protocol.fields = { match_type_field, ll_type_field, payload_field }
+local pcap_a_len_field = ProtoField.uint32(
+    "diff.pcap_a_len", "PCAP A Payload Length",
+    base.DEC, nil, nil, "PCAP A Payload Length")
+
+local pcap_b_len_field = ProtoField.uint32(
+    "diff.pcap_b_len", "PCAP B Payload Length",
+    base.DEC, nil, nil, "PCAP B Payload Length")
+
+local pcap_b_timestamp_field = ProtoField.absolute_time(
+    "diff.pcap_b_timestamp", "PCAP B Timestamp")
+
+local pcap_time_diff_field = ProtoField.relative_time(
+    "diff.time_diff", "Time Difference A -> B")
+
+diff_protocol.fields = { match_type_field, ll_type_a_field, ll_type_b_field,
+                         pcap_a_len_field, pcap_b_len_field,
+                         pcap_b_timestamp_field, pcap_time_diff_field }
 
 function diff_protocol.dissector(buffer, pinfo, tree)
 
@@ -71,18 +96,83 @@ function diff_protocol.dissector(buffer, pinfo, tree)
 
     local subtree = tree:add(diff_protocol, buffer(), "Diff Protocol")
 
+    local match = buffer(0,1):le_uint()
     subtree:add(match_type_field, buffer(0,1))
 
-    local ll_value = buffer(1,4):le_uint()
-    subtree:add_le(ll_type_field, buffer(1,4))
+    if match == 0 then  -- Matched
+        if buffer:len() < 13 then return 0 end
 
-    local payload = buffer(5):tvb()
-    subtree:add(payload_field, buffer(5))
+        local ll_a_value = buffer(1,4):le_uint()
+        subtree:add_le(ll_type_a_field, buffer(1,4))
 
-    local dissector_name = dlt_dissectors[ll_value]
-    if dissector_name then
-        Dissector.get(dissector_name):call(payload, pinfo, tree)
-    end
+        local a_len = buffer(5,4):le_uint()
+        subtree:add_le(pcap_a_len_field, buffer(5,4))
+    
+        local payload_a = buffer(9, a_len):tvb()
+       
+        local subtree_a = tree:add(diff_protocol, buffer(9, a_len), "PCAP A")
+
+        local dissector_name_a = dlt_dissectors[ll_a_value]
+        if dissector_name_a then
+            Dissector.get(dissector_name_a):call(payload_a, pinfo, tree)
+        end
+
+        local b_index = 9 + a_len
+        local ll_b_value = buffer(b_index, 4):le_uint()
+        subtree:add_le(ll_type_b_field, buffer(b_index, 4))
+        b_index = b_index + 4
+
+        -- Get Timestamp for PCAP B
+        local timestamp_secs = buffer(b_index, 4):le_uint()
+        local timestamp_usecs = buffer(b_index + 4, 4):le_uint()
+        local ts = NSTime.new(timestamp_secs, timestamp_usecs * 1000)
+        subtree:add(pcap_b_timestamp_field, ts)
+
+        -- For some reason there is no way to get the packet timestamp as
+        -- as NSTime object - only as floating point seconds. This is therefore
+        -- slightly lossy, and there will be small timing errors.
+        local pkt_time = NSTime(
+                pinfo.abs_ts, select(2,math.modf(pinfo.abs_ts)) * 10^9)
+        local time_diff = ts - pkt_time
+        subtree:add(pcap_time_diff_field, time_diff)
+
+        b_index = b_index + 8
+
+        local payload_b = buffer(b_index):tvb()
+        subtree:add(pcap_b_len_field, payload_b:len())
+        local dissector_name_b = dlt_dissectors[ll_a_value]
+        local subtree_b = tree:add(diff_protocol, buffer(b_index), "PCAP B")
+        if dissector_name_b then
+            Dissector.get(dissector_name_b):call(payload_b, pinfo, tree)
+        end
+
+    elseif match == 1 then -- Removed
+        local ll_a_value = buffer(1,4):le_uint()
+        subtree:add_le(ll_type_a_field, buffer(1,4))
+    
+        local payload = buffer(5):tvb()
+        subtree:add(pcap_a_len_field, payload:len())
+
+        local subtree_a = tree:add(diff_protocol, buffer(5), "PCAP A")        
+    
+        local dissector_name = dlt_dissectors[ll_a_value]
+        if dissector_name then
+            Dissector.get(dissector_name):call(payload, pinfo, tree)
+        end
+    else -- Added
+        local ll_b_value = buffer(1,4):le_uint()
+        subtree:add_le(ll_type_b_field, buffer(1,4))
+    
+        local payload = buffer(5):tvb()
+        subtree:add(pcap_b_len_field, payload:len())
+    
+        local subtree_b = tree:add(diff_protocol, buffer(5), "PCAP B")
+
+        local dissector_name = dlt_dissectors[ll_b_value]
+        if dissector_name then
+            Dissector.get(dissector_name):call(payload, pinfo, tree)
+        end
+    end  
 
 end
 

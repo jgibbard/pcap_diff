@@ -124,7 +124,9 @@ void PacketDiff::FindMatchingTimestampSearch(Packets& packets_a,
 
       if (!it_b->match && ComparePacket(packet_a, *it_b)) {
         packet_a.match = true;
+        packet_a.match_packet = &(*it_b);
         it_b->match = true;
+        it_b->match_packet = &packet_a;
         break;
       }
     }
@@ -138,7 +140,9 @@ void PacketDiff::FindMatchingFullSearch(Packets& packets_a,
       if (packet_b.match) continue;
       if (ComparePacket(packet_a, packet_b)) {
         packet_a.match = true;
+        packet_a.match_packet = &packet_b;
         packet_b.match = true;
+        packet_b.match_packet = &packet_a;
         break;
       }
     }

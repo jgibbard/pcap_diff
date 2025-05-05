@@ -27,4 +27,10 @@ namespace PcapWriter {
 
   void CopyHeaderIncLen(uint8_t* file, PcapFile::PacketHeader header, 
                         uint32_t inc = 1);
+  
+  uint8_t* WritePacketFullFormat(uint8_t* file_ptr, const Packet& packet,
+                                 uint32_t link_layer, bool added);
+  uint8_t* WritePacketFullFormatMatch(uint8_t* file_ptr, const Packet& packet,
+                                      uint32_t link_layer_a,
+                                      uint32_t link_layer_b);
 } 

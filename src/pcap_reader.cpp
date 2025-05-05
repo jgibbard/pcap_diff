@@ -88,7 +88,7 @@ std::vector<Packet> PcapReader::GetPackets(uint64_t max_packets) const {
     // Since the size of the vector will keep growing, it will likely be
     // moved several times.
     packets.emplace_back(Packet{*header_ptr, std::vector<uint8_t>(
-        packet_ptr, packet_ptr+header_ptr->incl_len), false});
+        packet_ptr, packet_ptr+header_ptr->incl_len), false, nullptr});
 
     packet_ptr += header_ptr->incl_len;
 
