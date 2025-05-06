@@ -101,11 +101,11 @@ Packet matching method. One of:
 ### `-f, --output-format <format>`
 Output diff format (for the resulting PCAP). One of:
 
-`basic`: Appends one byte to the end of all packets to indicate if the packet was matching (`0x00`), removed (`0x01`), or added (`0x02`). Modified and removed packets are sourced from `File A`. Added packets are sourced from `File B`. The timestamps in the output PCAP reflect the source file that the packet came from (with `--time-offset-a` and `--time-offset-b` applied). Wireshark row colouring can be used to highlight added and removed packets. The `basic` output format is the default format.
+`basic`: Appends one byte to the end of all packets to indicate if the packet was matching (`0x00`), removed (`0x01`), or added (`0x02`). Matched and removed packets are sourced from `File A`. Added packets are sourced from `File B`. The timestamps in the output PCAP reflect the source file that the packet came from (with `--time-offset-a` and `--time-offset-b` applied). Wireshark row colouring can be used to highlight added and removed packets. The `basic` output format is the default format.
 
 In order to use the `basic` output format, both PCAPs must have the same link layer. For more information on viewing the `basic` output format, see [here](#wireshark-usage---basic-output-format).
 
-`full`: Include all packets from both files encapsulated in a custom link layer so that Wireshark can show modified packets in the same row. Viewing this output format requires a Wireshark plugin. For more information on viewing the `full` output format, see [here](#wireshark-usage---full-output-format).
+`full`: Include all packets from both files encapsulated in a custom link layer so that Wireshark can show matching packets in the same row. Viewing this output format requires a Wireshark plugin. For more information on viewing the `full` output format, see [here](#wireshark-usage---full-output-format).
 
 `match_a`: Only packets from `File A` that matched.
 
